@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import { join } from 'path';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFoundHandler } from './middleware/notFound.js';
 import { setupRoutes } from './routes/index.js';
@@ -32,6 +33,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging middleware
 app.use(morgan('dev'));
+
+// Serve static files from uploads directory
+const uploadsPath = join(process.cwd(), 'backend', 'uploads');
+app.use('/uploads', express.static(uploadsPath));
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response): void => {
