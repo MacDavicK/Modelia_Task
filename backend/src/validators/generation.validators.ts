@@ -32,7 +32,7 @@ export const imageFileSchema = z.object({
     .number()
     .max(10 * 1024 * 1024, 'Image size must not exceed 10MB'), // 10MB max
   destination: z.string().optional(),
-  filename: z.string(),
+  filename: z.string().optional(), // Optional because memory storage doesn't always set this
   path: z.string().optional(),
   buffer: z.instanceof(Buffer).optional(),
 });

@@ -12,11 +12,28 @@ const getUniqueUser = (prefix: string) => ({
 const testUser = getUniqueUser('test');
 const otherUser = getUniqueUser('other');
 
-// Helper to create a test image buffer
+// Helper to create a test image buffer with proper JPEG structure
 const createTestImageBuffer = (): Buffer => {
-  // Create a minimal valid JPEG header (FF D8 FF E0)
-  const jpegHeader = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
-  const padding = Buffer.alloc(1000); // Add some padding to make it a valid test file
+  // Create a minimal valid JPEG file structure
+  // JPEG Start of Image (SOI) marker: FF D8
+  // JPEG Application (APP0) segment: FF E0
+  // Length: 00 10 (16 bytes)
+  // Identifier: "JFIF\0"
+  // Rest of APP0 segment data
+  const jpegHeader = Buffer.from([
+    0xff, 0xd8, // SOI marker
+    0xff, 0xe0, // APP0 marker
+    0x00, 0x10, // Length (16 bytes)
+    0x4a, 0x46, 0x49, 0x46, 0x00, // "JFIF\0"
+    0x01, 0x01, // Version
+    0x01, // Units (0=no units, 1=dpi)
+    0x00, 0x48, // X density
+    0x00, 0x48, // Y density
+    0x00, 0x00, // Thumbnail width
+    0x00, 0x00, // Thumbnail height
+  ]);
+  // Add some padding to make it a valid test file
+  const padding = Buffer.alloc(1000, 0xff);
   return Buffer.concat([jpegHeader, padding]);
 };
 
@@ -82,8 +99,17 @@ describe('Generation API', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .field('prompt', 'A stylish fashion outfit')
         .field('style', 'Artistic')
-        .attach('image', imageBuffer, 'test.jpg')
-        .expect(201);
+        .attach('image', imageBuffer, 'test.jpg');
+      
+      // Debug: log response if not 201
+      if (response.status !== 201) {
+        console.error('Generation creation failed:', {
+          status: response.status,
+          body: JSON.stringify(response.body, null, 2),
+        });
+      }
+      
+      expect(response.status).toBe(201);
 
       expect(response.body).toHaveProperty('id');
       expect(response.body).toHaveProperty('prompt', 'A stylish fashion outfit');

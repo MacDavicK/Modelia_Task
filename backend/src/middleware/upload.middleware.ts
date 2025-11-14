@@ -13,8 +13,16 @@ const fileFilter = (
   cb: multer.FileFilterCallback
 ): void => {
   const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+  
+  // Also check file extension as fallback (for test files that might not have mimetype set)
+  const fileExtension = file.originalname.toLowerCase().split('.').pop();
+  const allowedExtensions = ['jpg', 'jpeg', 'png'];
 
-  if (allowedMimeTypes.includes(file.mimetype)) {
+  // Check mimetype first, then fallback to extension
+  const isValidMimeType = allowedMimeTypes.includes(file.mimetype);
+  const isValidExtension = fileExtension && allowedExtensions.includes(fileExtension);
+
+  if (isValidMimeType || isValidExtension) {
     cb(null, true);
   } else {
     // Pass error to multer, which will be caught by error handler
