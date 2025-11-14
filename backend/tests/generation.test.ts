@@ -1,0 +1,290 @@
+import request from 'supertest';
+import app from '../src/server.js';
+import prisma from '../src/utils/db.js';
+
+// Test user data
+const testUser = {
+  email: 'test@example.com',
+  password: 'TestPassword123',
+};
+
+const otherUser = {
+  email: 'other@example.com',
+  password: 'TestPassword123',
+};
+
+// Helper to create a test image buffer
+const createTestImageBuffer = (): Buffer => {
+  // Create a minimal valid JPEG header (FF D8 FF E0)
+  const jpegHeader = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+  const padding = Buffer.alloc(1000); // Add some padding to make it a valid test file
+  return Buffer.concat([jpegHeader, padding]);
+};
+
+describe('Generation API', () => {
+  let authToken: string;
+  let userId: string;
+  let otherAuthToken: string;
+  let otherUserId: string;
+
+  beforeEach(async () => {
+    // Clear database
+    await prisma.generation.deleteMany({});
+    await prisma.user.deleteMany({});
+
+    // Create test user and get token
+    const signupResponse = await request(app)
+      .post('/api/auth/signup')
+      .send(testUser);
+    authToken = signupResponse.body.token;
+    userId = signupResponse.body.user.id;
+
+    // Create other user
+    const otherSignupResponse = await request(app)
+      .post('/api/auth/signup')
+      .send(otherUser);
+    otherAuthToken = otherSignupResponse.body.token;
+    otherUserId = otherSignupResponse.body.user.id;
+
+  });
+
+  afterAll(async () => {
+    await prisma.generation.deleteMany({});
+    await prisma.user.deleteMany({});
+    await prisma.$disconnect();
+  });
+
+  describe('POST /api/generations', () => {
+    it('should create a generation successfully (201)', async () => {
+      const imageBuffer = createTestImageBuffer();
+
+      const response = await request(app)
+        .post('/api/generations')
+        .set('Authorization', `Bearer ${authToken}`)
+        .field('prompt', 'A stylish fashion outfit')
+        .field('style', 'Artistic')
+        .attach('image', imageBuffer, 'test.jpg')
+        .expect(201);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body).toHaveProperty('prompt', 'A stylish fashion outfit');
+      expect(response.body).toHaveProperty('style', 'Artistic');
+      expect(response.body).toHaveProperty('imageUrl');
+      expect(response.body).toHaveProperty('status', 'completed');
+      expect(response.body).toHaveProperty('userId', userId);
+    });
+
+    it('should return 401 without authentication token', async () => {
+      const imageBuffer = createTestImageBuffer();
+
+      const response = await request(app)
+        .post('/api/generations')
+        .field('prompt', 'A stylish fashion outfit')
+        .field('style', 'Artistic')
+        .attach('image', imageBuffer, 'test.jpg')
+        .expect(401);
+
+      expect(response.body.error).toContain('Authentication');
+    });
+
+    it('should return 400 for invalid file type', async () => {
+      const textBuffer = Buffer.from('This is not an image');
+
+      const response = await request(app)
+        .post('/api/generations')
+        .set('Authorization', `Bearer ${authToken}`)
+        .field('prompt', 'A stylish fashion outfit')
+        .field('style', 'Artistic')
+        .attach('image', textBuffer, 'test.txt')
+        .expect(400);
+
+      expect(response.body.error).toContain('file type');
+    });
+
+    it('should return 400 for missing file', async () => {
+      const response = await request(app)
+        .post('/api/generations')
+        .set('Authorization', `Bearer ${authToken}`)
+        .field('prompt', 'A stylish fashion outfit')
+        .field('style', 'Artistic')
+        .expect(400);
+
+      expect(response.body.error).toContain('file');
+    });
+
+    it('should return 400 for invalid prompt (too short)', async () => {
+      const imageBuffer = createTestImageBuffer();
+
+      const response = await request(app)
+        .post('/api/generations')
+        .set('Authorization', `Bearer ${authToken}`)
+        .field('prompt', 'Short')
+        .field('style', 'Artistic')
+        .attach('image', imageBuffer, 'test.jpg')
+        .expect(400);
+
+      expect(response.body.error).toBe('Validation failed');
+    });
+
+    it('should return 400 for invalid style', async () => {
+      const imageBuffer = createTestImageBuffer();
+
+      const response = await request(app)
+        .post('/api/generations')
+        .set('Authorization', `Bearer ${authToken}`)
+        .field('prompt', 'A stylish fashion outfit')
+        .field('style', 'InvalidStyle')
+        .attach('image', imageBuffer, 'test.jpg')
+        .expect(400);
+
+      expect(response.body.error).toBe('Validation failed');
+    });
+
+    it('should handle model overloaded error (503) - may need multiple attempts', async () => {
+      const imageBuffer = createTestImageBuffer();
+
+      // The service has a 20% chance of throwing "Model overloaded" error
+      // We'll make multiple requests and expect at least one to potentially fail
+      // For a deterministic test, we can make 10 requests and expect some to succeed
+      let successCount = 0;
+      let error503Count = 0;
+
+      for (let i = 0; i < 10; i++) {
+        const response = await request(app)
+          .post('/api/generations')
+          .set('Authorization', `Bearer ${authToken}`)
+          .field('prompt', `Test prompt ${i}`)
+          .field('style', 'Artistic')
+          .attach('image', imageBuffer, 'test.jpg');
+
+        if (response.status === 201) {
+          successCount++;
+        } else if (response.status === 503) {
+          error503Count++;
+          expect(response.body.error).toBe('Model overloaded');
+        }
+      }
+
+      // We should have at least some successes (80% chance each)
+      // and potentially some 503 errors (20% chance each)
+      expect(successCount + error503Count).toBe(10);
+      expect(successCount).toBeGreaterThan(0);
+    });
+  });
+
+  describe('GET /api/generations', () => {
+    beforeEach(async () => {
+      // Create some test generations for the user
+      const imageBuffer = createTestImageBuffer();
+      
+      // Create 3 generations for test user
+      for (let i = 0; i < 3; i++) {
+        await request(app)
+          .post('/api/generations')
+          .set('Authorization', `Bearer ${authToken}`)
+          .field('prompt', `Test prompt ${i}`)
+          .field('style', 'Artistic')
+          .attach('image', imageBuffer, 'test.jpg');
+      }
+
+      // Create 2 generations for other user
+      for (let i = 0; i < 2; i++) {
+        await request(app)
+          .post('/api/generations')
+          .set('Authorization', `Bearer ${otherAuthToken}`)
+          .field('prompt', `Other user prompt ${i}`)
+          .field('style', 'Realistic')
+          .attach('image', imageBuffer, 'test.jpg');
+      }
+    });
+
+    it('should return user\'s generations (200)', async () => {
+      const response = await request(app)
+        .get('/api/generations')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBe(3);
+      
+      // Verify all generations belong to the user
+      response.body.forEach((generation: any) => {
+        expect(generation).toHaveProperty('id');
+        expect(generation).toHaveProperty('prompt');
+        expect(generation).toHaveProperty('style');
+        expect(generation).toHaveProperty('imageUrl');
+        expect(generation).toHaveProperty('createdAt');
+        expect(generation).toHaveProperty('status');
+      });
+    });
+
+    it('should not return other users\' generations', async () => {
+      const response = await request(app)
+        .get('/api/generations')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      // Should only return 3 generations (test user's), not 5 (total)
+      expect(response.body.length).toBe(3);
+      
+      // Verify prompts are from test user
+      response.body.forEach((generation: any) => {
+        expect(generation.prompt).toMatch(/^Test prompt/);
+      });
+    });
+
+    it('should respect limit query parameter', async () => {
+      const response = await request(app)
+        .get('/api/generations?limit=2')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(response.body.length).toBe(2);
+    });
+
+    it('should return 400 for invalid limit', async () => {
+      const response = await request(app)
+        .get('/api/generations?limit=invalid')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(400);
+
+      expect(response.body.error).toContain('Limit');
+    });
+
+    it('should return 400 for limit out of range', async () => {
+      const response = await request(app)
+        .get('/api/generations?limit=100')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(400);
+
+      expect(response.body.error).toContain('Limit');
+    });
+
+    it('should return 401 without authentication token', async () => {
+      const response = await request(app)
+        .get('/api/generations')
+        .expect(401);
+
+      expect(response.body.error).toContain('Authentication');
+    });
+
+    it('should return empty array when user has no generations', async () => {
+      // Create a new user with no generations
+      const newUserResponse = await request(app)
+        .post('/api/auth/signup')
+        .send({
+          email: 'newuser@example.com',
+          password: 'TestPassword123',
+        });
+
+      const response = await request(app)
+        .get('/api/generations')
+        .set('Authorization', `Bearer ${newUserResponse.body.token}`)
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBe(0);
+    });
+  });
+});
+
