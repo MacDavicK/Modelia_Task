@@ -76,7 +76,7 @@ export const GenerationForm = ({
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md" role="alert" aria-live="assertive">
           <p className="text-sm text-red-600">{error}</p>
         </div>
       )}
@@ -129,8 +129,8 @@ export const GenerationForm = ({
           })}
           rows={4}
           disabled={loading}
-          className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed resize-none ${
-            errors.prompt ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
+          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed resize-none ${
+            errors.prompt ? 'border-red-300 focus-visible:ring-red-500' : 'border-gray-300'
           }`}
           placeholder="Describe the style you want (10-500 characters)..."
           aria-invalid={!!errors.prompt}
@@ -163,8 +163,8 @@ export const GenerationForm = ({
             required: 'Style is required',
           })}
           disabled={loading}
-          className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${
-            errors.style ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
+          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${
+            errors.style ? 'border-red-300 focus-visible:ring-red-500' : 'border-gray-300'
           }`}
           aria-invalid={!!errors.style}
           aria-describedby={errors.style ? 'style-error' : undefined}
@@ -186,7 +186,9 @@ export const GenerationForm = ({
         <button
           type="submit"
           disabled={!isFormValid || loading}
-          className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          aria-label={loading ? 'Generating image, please wait' : 'Generate styled image'}
+          aria-busy={loading}
+          className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
         >
           {loading ? (
             <>
@@ -220,7 +222,8 @@ export const GenerationForm = ({
           type="button"
           onClick={handleClear}
           disabled={loading}
-          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Clear form and reset all fields"
+          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
         >
           Clear
         </button>

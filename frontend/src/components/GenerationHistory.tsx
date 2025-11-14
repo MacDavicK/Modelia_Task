@@ -120,6 +120,8 @@ export const GenerationHistory = ({ onRestore, refreshTrigger }: GenerationHisto
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
+            focusable="false"
           >
             <path
               strokeLinecap="round"
@@ -155,12 +157,12 @@ export const GenerationHistory = ({ onRestore, refreshTrigger }: GenerationHisto
                 handleCardClick(generation);
               }
             }}
-            aria-label={`Restore generation: ${generation.prompt}`}
+            aria-label={`Restore generation: ${generation.prompt} in ${generation.style} style`}
           >
             <div className="relative aspect-square bg-gray-100">
               <img
                 src={getImageUrl(generation.imageUrl)}
-                alt={generation.prompt}
+                alt={`Generated image: ${generation.prompt} in ${generation.style} style`}
                 className="w-full h-full object-cover"
               />
             </div>

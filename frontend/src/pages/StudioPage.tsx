@@ -119,12 +119,15 @@ export const StudioPage = (): JSX.Element => {
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Result</h2>
 
           {loading && (
-            <div className="flex flex-col items-center justify-center py-12">
+            <div className="flex flex-col items-center justify-center py-12" aria-live="polite" aria-busy="true">
+              <div className="sr-only">Generating image, please wait</div>
               <svg
                 className="animate-spin h-12 w-12 text-primary-600 mb-4"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
               >
                 <circle
                   className="opacity-25"
@@ -140,10 +143,11 @@ export const StudioPage = (): JSX.Element => {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              <p className="text-gray-600 mb-4">Generating...</p>
+              <p className="text-gray-600 mb-4" aria-live="polite">Generating...</p>
               <button
                 onClick={abort}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+                aria-label="Cancel image generation"
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
               >
                 Abort
               </button>
@@ -151,13 +155,15 @@ export const StudioPage = (): JSX.Element => {
           )}
 
           {error && !loading && (
-            <div className="py-12 text-center">
+            <div className="py-12 text-center" role="alert" aria-live="assertive">
               <div className="mb-4">
                 <svg
                   className="mx-auto h-12 w-12 text-red-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
                 >
                   <path
                     strokeLinecap="round"
@@ -171,7 +177,8 @@ export const StudioPage = (): JSX.Element => {
               {retryCount < MAX_RETRIES && lastFormData && (
                 <button
                   onClick={handleRetry}
-                  className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-colors"
+                  aria-label={`Retry generation, ${MAX_RETRIES - retryCount} attempts remaining`}
+                  className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                 >
                   Retry ({MAX_RETRIES - retryCount} attempts left)
                 </button>
@@ -183,11 +190,11 @@ export const StudioPage = (): JSX.Element => {
           )}
 
           {result && !loading && (
-            <div className="space-y-4">
+            <div className="space-y-4" aria-live="polite">
               <div className="relative">
                 <img
                   src={getImageUrl(result.imageUrl)}
-                  alt="Generated image"
+                  alt={`Generated image: ${result.prompt} in ${result.style} style`}
                   className="w-full h-auto rounded-lg"
                 />
               </div>
@@ -207,7 +214,8 @@ export const StudioPage = (): JSX.Element => {
               </div>
               <button
                 onClick={reset}
-                className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors"
+                aria-label="Clear result and start over"
+                className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
               >
                 Clear Result
               </button>

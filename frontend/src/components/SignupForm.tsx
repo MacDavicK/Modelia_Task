@@ -105,7 +105,7 @@ export const SignupForm = ({ onSubmit, loading = false, error }: SignupFormProps
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md" role="alert" aria-live="assertive">
           <p className="text-sm text-red-600">{error}</p>
         </div>
       )}
@@ -123,9 +123,9 @@ export const SignupForm = ({ onSubmit, loading = false, error }: SignupFormProps
           onBlur={handleBlur}
           required
           disabled={loading}
-          className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${
+          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${
             validationErrors.email
-              ? 'border-red-300 focus:ring-red-500'
+              ? 'border-red-300 focus-visible:ring-red-500'
               : 'border-gray-300'
           }`}
           placeholder="you@example.com"
@@ -154,9 +154,9 @@ export const SignupForm = ({ onSubmit, loading = false, error }: SignupFormProps
             required
             disabled={loading}
             minLength={8}
-            className={`w-full px-4 py-2 pr-10 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${
+            className={`w-full px-4 py-2 pr-10 border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:border-transparent transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed ${
               validationErrors.password
-                ? 'border-red-300 focus:ring-red-500'
+                ? 'border-red-300 focus-visible:ring-red-500'
                 : 'border-gray-300'
             }`}
             placeholder="••••••••"
@@ -166,9 +166,9 @@ export const SignupForm = ({ onSubmit, loading = false, error }: SignupFormProps
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:text-gray-700 rounded p-1"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
-            tabIndex={-1}
+            aria-pressed={showPassword}
           >
             {showPassword ? (
               <svg
@@ -211,7 +211,9 @@ export const SignupForm = ({ onSubmit, loading = false, error }: SignupFormProps
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+        aria-label={loading ? 'Creating account, please wait' : 'Create a new account'}
+        aria-busy={loading}
+        className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
       >
         {loading ? (
           <>
@@ -246,7 +248,7 @@ export const SignupForm = ({ onSubmit, loading = false, error }: SignupFormProps
         Already have an account?{' '}
         <Link
           to="/login"
-          className="text-primary-600 hover:text-primary-700 font-medium focus:outline-none focus:underline"
+          className="text-primary-600 hover:text-primary-700 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:underline rounded"
         >
           Sign in
         </Link>

@@ -119,7 +119,7 @@ export const ImageUpload = ({ onFileSelect, error, disabled = false }: ImageUplo
             transition-colors
             ${dragActive ? 'border-primary-500 bg-primary-50' : 'border-gray-300'}
             ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary-400 hover:bg-gray-50'}
-            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2
           `}
         >
           <input
@@ -129,7 +129,7 @@ export const ImageUpload = ({ onFileSelect, error, disabled = false }: ImageUplo
             onChange={handleChange}
             disabled={disabled}
             className="hidden"
-            aria-label="File input"
+            aria-label="Upload image file (JPEG or PNG, max 10MB)"
           />
           <svg
             className="mx-auto h-12 w-12 text-gray-400"
@@ -137,6 +137,7 @@ export const ImageUpload = ({ onFileSelect, error, disabled = false }: ImageUplo
             fill="none"
             viewBox="0 0 48 48"
             aria-hidden="true"
+            focusable="false"
           >
             <path
               d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
@@ -158,7 +159,7 @@ export const ImageUpload = ({ onFileSelect, error, disabled = false }: ImageUplo
           <div className="flex items-start space-x-4">
             <img
               src={preview}
-              alt="Preview"
+              alt={fileInfo?.name ? `Preview of ${fileInfo.name}` : 'Image preview'}
               className="w-24 h-24 object-cover rounded-md"
             />
             <div className="flex-1 min-w-0">
@@ -169,8 +170,8 @@ export const ImageUpload = ({ onFileSelect, error, disabled = false }: ImageUplo
               type="button"
               onClick={handleClear}
               disabled={disabled}
-              className="text-red-600 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 rounded p-1"
-              aria-label="Remove image"
+              className="text-red-600 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 rounded p-1"
+              aria-label={`Remove image ${fileInfo?.name || ''}`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
