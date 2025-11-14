@@ -92,6 +92,15 @@ describe('Generation API', () => {
 
   describe('POST /api/generations', () => {
     it('should create a generation successfully (201)', async () => {
+      // Verify user exists before creating generation
+      const userExists = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+      if (!userExists) {
+        console.error('User does not exist:', userId);
+        throw new Error(`User ${userId} does not exist in database`);
+      }
+
       const imageBuffer = createTestImageBuffer();
 
       const response = await request(app)
@@ -106,6 +115,8 @@ describe('Generation API', () => {
         console.error('Generation creation failed:', {
           status: response.status,
           body: JSON.stringify(response.body, null, 2),
+          userId: userId,
+          userExists: !!userExists,
         });
       }
       

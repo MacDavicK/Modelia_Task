@@ -33,6 +33,19 @@ export const createGeneration = async (params: CreateGenerationParams) => {
   }
 
   // 80% chance: Create generation in database with status 'completed'
+  // First verify user exists to provide better error message
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+
+  if (!user) {
+    throw new CustomError(
+      `User with ID ${userId} does not exist`,
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
+
   const generation = await prisma.generation.create({
     data: {
       userId,

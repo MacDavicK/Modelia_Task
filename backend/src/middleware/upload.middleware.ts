@@ -19,12 +19,29 @@ const fileFilter = (
   const allowedExtensions = ['jpg', 'jpeg', 'png'];
 
   // Check mimetype first, then fallback to extension
-  const isValidMimeType = allowedMimeTypes.includes(file.mimetype);
-  const isValidExtension = fileExtension && allowedExtensions.includes(fileExtension);
+  // If mimetype is missing or empty, check extension
+  // For test files, supertest might not set mimetype, so we rely on extension
+  const hasValidMimeType = file.mimetype && allowedMimeTypes.includes(file.mimetype);
+  const hasValidExtension = fileExtension && allowedExtensions.includes(fileExtension);
 
-  if (isValidMimeType || isValidExtension) {
+  if (hasValidMimeType || hasValidExtension) {
+    // If mimetype is missing but extension is valid, set a default mimetype
+    if (!file.mimetype && hasValidExtension) {
+      // Set mimetype based on extension for test files
+      if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
+        (file as any).mimetype = 'image/jpeg';
+      } else if (fileExtension === 'png') {
+        (file as any).mimetype = 'image/png';
+      }
+    }
     cb(null, true);
   } else {
+    // Log for debugging
+    console.log('File filter rejected:', {
+      mimetype: file.mimetype,
+      originalname: file.originalname,
+      extension: fileExtension,
+    });
     // Pass error to multer, which will be caught by error handler
     const error = new Error('Invalid file type. Only JPEG and PNG images are allowed.');
     (error as any).code = 'INVALID_FILE_TYPE';
@@ -47,7 +64,12 @@ export const validateUploadedFile = (
   _res: Response,
   next: NextFunction
 ): void => {
+  // Check if multer rejected the file (file filter error)
+  // When multer's file filter rejects, req.file is undefined
+  // but the error should be caught by the error handler
   if (!req.file) {
+    // Check if there was a multer error that we should handle
+    // This will be caught by the app-level error handler
     throw new CustomError('Image file is required', HTTP_STATUS.BAD_REQUEST);
   }
 
