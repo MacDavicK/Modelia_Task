@@ -15,6 +15,16 @@ router.post(
   '/',
   authenticate, // Require authentication
   upload.single('image'), // Handle file upload
+  (req, res, next) => {
+    // Handle multer file filter errors
+    if ((req as any).fileValidationError) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: [{ field: 'image', message: (req as any).fileValidationError }],
+      });
+    }
+    next();
+  },
   validateUploadedFile, // Validate uploaded file
   validateGeneration(generateSchema, imageFileSchema), // Validate prompt, style, and file
   createGenerationController

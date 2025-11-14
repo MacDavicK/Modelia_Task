@@ -51,6 +51,24 @@ app.get('/health', (_req: Request, res: Response): void => {
 // Setup API routes
 setupRoutes(app);
 
+// Multer error handler (must be before 404 handler)
+app.use((err: any, req: any, res: any, next: any) => {
+  // Handle multer errors
+  if (err && err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: [{ field: 'image', message: 'File size exceeds 10MB limit' }],
+    });
+  }
+  if (err && err.message && (err.message.includes('file type') || err.message.includes('Invalid file type'))) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: [{ field: 'image', message: err.message }],
+    });
+  }
+  next(err);
+});
+
 // 404 handler for undefined routes
 app.use(notFoundHandler);
 

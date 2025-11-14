@@ -19,12 +19,13 @@ testApp.get('/api/test-protected', authenticate, (req, res) => {
 // Add error handler
 testApp.use(errorHandler);
 
-// Test user data
-const testUser = {
-  email: 'test@example.com',
+// Test user data - use unique emails to avoid conflicts
+const getTestUser = () => ({
+  email: `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
   password: 'TestPassword123',
-};
+});
 
+const testUser = getTestUser();
 const invalidUser = {
   email: 'nonexistent@example.com',
   password: 'WrongPassword123',
@@ -33,7 +34,9 @@ const invalidUser = {
 describe('Authentication API', () => {
   // Clean up database before each test
   beforeEach(async () => {
-    // Delete all users (cascade will delete generations)
+    // Delete all generations first (due to foreign key constraint)
+    await prisma.generation.deleteMany({});
+    // Then delete all users
     await prisma.user.deleteMany({});
   });
 
@@ -45,33 +48,35 @@ describe('Authentication API', () => {
 
   describe('POST /api/auth/signup', () => {
     it('should create a new user and return 201 with token', async () => {
+      const uniqueUser = getTestUser();
       const response = await request(app)
         .post('/api/auth/signup')
-        .send(testUser)
+        .send(uniqueUser)
         .expect(201);
 
       expect(response.body).toHaveProperty('token');
       expect(response.body).toHaveProperty('user');
       expect(response.body.user).toHaveProperty('id');
-      expect(response.body.user.email).toBe(testUser.email);
+      expect(response.body.user.email).toBe(uniqueUser.email);
       expect(response.body.user).not.toHaveProperty('password');
 
       // Verify user was created in database
       const user = await prisma.user.findUnique({
-        where: { email: testUser.email },
+        where: { email: uniqueUser.email },
       });
       expect(user).toBeTruthy();
-      expect(user?.email).toBe(testUser.email);
+      expect(user?.email).toBe(uniqueUser.email);
     });
 
     it('should return 409 for duplicate email', async () => {
+      const uniqueUser = getTestUser();
       // Create first user
-      await request(app).post('/api/auth/signup').send(testUser);
+      await request(app).post('/api/auth/signup').send(uniqueUser).expect(201);
 
       // Try to create duplicate
       const response = await request(app)
         .post('/api/auth/signup')
-        .send(testUser)
+        .send(uniqueUser)
         .expect(409);
 
       expect(response.body).toHaveProperty('error');
@@ -79,11 +84,12 @@ describe('Authentication API', () => {
     });
 
     it('should return 400 for invalid email format', async () => {
+      const uniqueUser = getTestUser();
       const response = await request(app)
         .post('/api/auth/signup')
         .send({
           email: 'invalid-email',
-          password: testUser.password,
+          password: uniqueUser.password,
         })
         .expect(400);
 
@@ -94,10 +100,11 @@ describe('Authentication API', () => {
     });
 
     it('should return 400 for password too short', async () => {
+      const uniqueUser = getTestUser();
       const response = await request(app)
         .post('/api/auth/signup')
         .send({
-          email: testUser.email,
+          email: uniqueUser.email,
           password: 'Short1',
         })
         .expect(400);
@@ -107,10 +114,11 @@ describe('Authentication API', () => {
     });
 
     it('should return 400 for password without uppercase', async () => {
+      const uniqueUser = getTestUser();
       const response = await request(app)
         .post('/api/auth/signup')
         .send({
-          email: testUser.email,
+          email: uniqueUser.email,
           password: 'password123',
         })
         .expect(400);
@@ -120,10 +128,11 @@ describe('Authentication API', () => {
     });
 
     it('should return 400 for password without number', async () => {
+      const uniqueUser = getTestUser();
       const response = await request(app)
         .post('/api/auth/signup')
         .send({
-          email: testUser.email,
+          email: uniqueUser.email,
           password: 'Password',
         })
         .expect(400);
@@ -156,20 +165,23 @@ describe('Authentication API', () => {
   });
 
   describe('POST /api/auth/login', () => {
+    let loginUser: { email: string; password: string };
+
     beforeEach(async () => {
       // Create a user for login tests
-      await request(app).post('/api/auth/signup').send(testUser);
+      loginUser = getTestUser();
+      await request(app).post('/api/auth/signup').send(loginUser).expect(201);
     });
 
     it('should login successfully and return 200 with token', async () => {
       const response = await request(app)
         .post('/api/auth/login')
-        .send(testUser)
+        .send(loginUser)
         .expect(200);
 
       expect(response.body).toHaveProperty('token');
       expect(response.body).toHaveProperty('user');
-      expect(response.body.user.email).toBe(testUser.email);
+      expect(response.body.user.email).toBe(loginUser.email);
       expect(response.body.user).not.toHaveProperty('password');
     });
 
@@ -177,7 +189,7 @@ describe('Authentication API', () => {
       const response = await request(app)
         .post('/api/auth/login')
         .send({
-          email: testUser.email,
+          email: loginUser.email,
           password: 'WrongPassword123',
         })
         .expect(401);
@@ -201,7 +213,7 @@ describe('Authentication API', () => {
         .post('/api/auth/login')
         .send({
           email: 'invalid-email',
-          password: testUser.password,
+          password: 'TestPassword123',
         })
         .expect(400);
 
@@ -213,7 +225,7 @@ describe('Authentication API', () => {
       const response = await request(app)
         .post('/api/auth/login')
         .send({
-          password: testUser.password,
+          password: 'TestPassword123',
         })
         .expect(400);
 
@@ -221,10 +233,11 @@ describe('Authentication API', () => {
     });
 
     it('should return 400 for missing password', async () => {
+      const uniqueUser = getTestUser();
       const response = await request(app)
         .post('/api/auth/login')
         .send({
-          email: testUser.email,
+          email: uniqueUser.email,
         })
         .expect(400);
 
@@ -234,12 +247,15 @@ describe('Authentication API', () => {
 
   describe('Protected Routes', () => {
     let authToken: string;
+    let protectedUser: { email: string; password: string };
 
     beforeEach(async () => {
       // Create user and get token
+      protectedUser = getTestUser();
       const signupResponse = await request(app)
         .post('/api/auth/signup')
-        .send(testUser);
+        .send(protectedUser)
+        .expect(201);
       authToken = signupResponse.body.token;
     });
 

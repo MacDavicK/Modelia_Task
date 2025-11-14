@@ -2,16 +2,15 @@ import request from 'supertest';
 import app from '../src/app.js';
 import prisma from '../src/utils/db.js';
 
-// Test user data
-const testUser = {
-  email: 'test@example.com',
+// Helper to generate unique test users
+const getUniqueUser = (prefix: string) => ({
+  email: `${prefix}-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
   password: 'TestPassword123',
-};
+});
 
-const otherUser = {
-  email: 'other@example.com',
-  password: 'TestPassword123',
-};
+// Test user data - generate unique emails for each test run
+const testUser = getUniqueUser('test');
+const otherUser = getUniqueUser('other');
 
 // Helper to create a test image buffer
 const createTestImageBuffer = (): Buffer => {
@@ -19,6 +18,11 @@ const createTestImageBuffer = (): Buffer => {
   const jpegHeader = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
   const padding = Buffer.alloc(1000); // Add some padding to make it a valid test file
   return Buffer.concat([jpegHeader, padding]);
+};
+
+// Helper to create a test text buffer (for invalid file type tests)
+const createTestTextBuffer = (): Buffer => {
+  return Buffer.from('This is a text file, not an image');
 };
 
 describe('Generation API', () => {
@@ -32,14 +36,18 @@ describe('Generation API', () => {
     await prisma.generation.deleteMany({});
     await prisma.user.deleteMany({});
 
+    // Generate unique users for this test run
+    const currentTestUser = getUniqueUser('test');
+    const currentOtherUser = getUniqueUser('other');
+
     // Create test user and get token
     const signupResponse = await request(app)
       .post('/api/auth/signup')
-      .send(testUser)
-      .expect(201);
+      .send(currentTestUser);
     
-    if (!signupResponse.body.user || !signupResponse.body.token) {
-      throw new Error('Failed to create test user');
+    if (signupResponse.status !== 201 || !signupResponse.body.user || !signupResponse.body.token) {
+      console.error('Signup failed:', signupResponse.status, signupResponse.body);
+      throw new Error(`Failed to create test user: ${JSON.stringify(signupResponse.body)}`);
     }
     
     authToken = signupResponse.body.token;
@@ -48,11 +56,11 @@ describe('Generation API', () => {
     // Create other user
     const otherSignupResponse = await request(app)
       .post('/api/auth/signup')
-      .send(otherUser)
-      .expect(201);
+      .send(currentOtherUser);
     
-    if (!otherSignupResponse.body.user || !otherSignupResponse.body.token) {
-      throw new Error('Failed to create other test user');
+    if (otherSignupResponse.status !== 201 || !otherSignupResponse.body.user || !otherSignupResponse.body.token) {
+      console.error('Other signup failed:', otherSignupResponse.status, otherSignupResponse.body);
+      throw new Error(`Failed to create other test user: ${JSON.stringify(otherSignupResponse.body)}`);
     }
     
     otherAuthToken = otherSignupResponse.body.token;

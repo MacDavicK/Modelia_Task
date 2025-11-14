@@ -8,7 +8,7 @@ const storage = multer.memoryStorage();
 
 // File filter to accept only JPEG and PNG images
 const fileFilter = (
-  _req: Request,
+  req: Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ): void => {
@@ -17,9 +17,10 @@ const fileFilter = (
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(
-      new Error('Invalid file type. Only JPEG and PNG images are allowed.')
-    );
+    // Pass error to multer, which will be caught by error handler
+    const error = new Error('Invalid file type. Only JPEG and PNG images are allowed.');
+    (error as any).code = 'INVALID_FILE_TYPE';
+    cb(error);
   }
 };
 

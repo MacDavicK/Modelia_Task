@@ -3,6 +3,7 @@
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-key-for-testing-only-min-32-chars';
 process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./prisma/dev.db';
 
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';

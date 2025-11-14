@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcrypt';
-import * as jwt from 'jsonwebtoken';
+import jwt, { type SignOptions } from 'jsonwebtoken';
 import { Prisma } from '@prisma/client';
 import prisma from '../utils/db.js';
 import { CustomError } from '../middleware/errorHandler.js';
@@ -47,9 +47,11 @@ const comparePassword = async (password: string, hash: string): Promise<boolean>
  * Generate a JWT token for a user
  */
 const generateToken = (userId: string): string => {
-  return jwt.sign({ userId }, jwtSecret, {
-    expiresIn: JWT_EXPIRES_IN,
-  } as jwt.SignOptions);
+  return jwt.sign(
+    { userId },
+    jwtSecret,
+    { expiresIn: JWT_EXPIRES_IN } as SignOptions
+  );
 };
 
 /**
@@ -97,9 +99,12 @@ export const signup = async (
       throw error;
     }
 
+    // Log the actual error for debugging
+    console.error('Signup error:', error);
+    
     // Handle other errors
     throw new CustomError(
-      'Failed to create user account',
+      error instanceof Error ? error.message : 'Failed to create user account',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
   }
@@ -155,12 +160,14 @@ export const verifyToken = (token: string): string => {
     const decoded = jwt.verify(token, jwtSecret) as { userId: string };
     return decoded.userId;
   } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      throw new CustomError('Token has expired', HTTP_STATUS.UNAUTHORIZED);
-    }
+    if (error && typeof error === 'object' && 'name' in error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new CustomError('Token has expired', HTTP_STATUS.UNAUTHORIZED);
+      }
 
-    if (error instanceof jwt.JsonWebTokenError) {
-      throw new CustomError('Invalid token', HTTP_STATUS.UNAUTHORIZED);
+      if (error.name === 'JsonWebTokenError') {
+        throw new CustomError('Invalid token', HTTP_STATUS.UNAUTHORIZED);
+      }
     }
 
     throw new CustomError('Token verification failed', HTTP_STATUS.UNAUTHORIZED);
