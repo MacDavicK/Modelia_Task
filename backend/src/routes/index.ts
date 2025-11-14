@@ -1,17 +1,15 @@
 import { type Express, Router } from 'express';
-
-// Import route modules here
-// Example: import authRoutes from './auth.routes.js';
+import authRoutes from './auth.routes.js';
 
 export const setupRoutes = (app: Express): void => {
   const router = Router();
 
   // Health check is already in server.ts
-  // Add API routes here
-  // Example: router.use('/api/auth', authRoutes);
-  // Example: router.use('/api/generations', generationRoutes);
+  // Mount API routes
+  router.use('/auth', authRoutes);
+  // Example: router.use('/generations', generationRoutes);
 
-  // Mount router to app
+  // Mount router to app with /api prefix
   app.use('/api', router);
 };
 
