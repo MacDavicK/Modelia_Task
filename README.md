@@ -107,6 +107,11 @@ cd Modelia_Task
 pnpm install
 ```
 
+**Note:** If you encounter issues with native dependencies (like `bcrypt`), you may need to run:
+```bash
+pnpm rebuild bcrypt --filter backend
+```
+
 ### 3. Set Up Environment Variables
 
 Create `.env` files for both frontend and backend:
@@ -121,8 +126,8 @@ NODE_ENV=development
 # Database
 DATABASE_URL="file:./dev.db"
 
-# JWT
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+# JWT (IMPORTANT: Use a strong secret in production, minimum 32 characters)
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-min-32-chars
 JWT_EXPIRES_IN=7d
 
 # File Upload
@@ -136,6 +141,20 @@ UPLOAD_DIR=./uploads
 VITE_API_URL=http://localhost:3001/api
 ```
 
+**Quick Setup:**
+```bash
+# Copy example env files (if they exist) or create manually
+# Backend
+cd backend
+cp .env.example .env  # Edit with your values
+cd ..
+
+# Frontend
+cd frontend
+cp .env.example .env  # Edit with your values
+cd ..
+```
+
 ### 4. Initialize Database
 
 ```bash
@@ -144,6 +163,25 @@ cd backend
 pnpm prisma generate
 pnpm prisma migrate dev --name init
 cd ..
+```
+
+**Verify Database Setup:**
+```bash
+# Open Prisma Studio to view database
+cd backend
+pnpm prisma studio
+# Opens at http://localhost:5555
+```
+
+### 5. Verify Installation
+
+```bash
+# Check that all dependencies are installed
+pnpm --filter backend list
+pnpm --filter frontend list
+
+# Verify TypeScript compilation
+pnpm type-check
 ```
 
 ---
@@ -190,14 +228,25 @@ pnpm start
 
 ## 🧪 Testing
 
+### Prerequisites for Testing
+
+Before running tests, ensure:
+1. Environment variables are set (especially `JWT_SECRET` for backend tests)
+2. Database is initialized (`pnpm prisma migrate dev`)
+3. No servers are running on ports 3001 (backend) or 5173 (frontend)
+
 ### Run All Tests
 
 ```bash
-# Run all tests with coverage
+# Run all tests (backend + frontend) with coverage
 pnpm test
 
-# Run tests in watch mode
+# Run tests in watch mode (for development)
 pnpm test:watch
+
+# Run tests for specific workspace
+pnpm --filter backend test
+pnpm --filter frontend test
 ```
 
 ### Backend Tests
@@ -205,60 +254,141 @@ pnpm test:watch
 ```bash
 cd backend
 
-# Unit tests
+# Run all backend tests
 pnpm test
 
-# Coverage report
+# Run specific test file
+pnpm test tests/auth.test.ts
+pnpm test tests/generation.test.ts
+
+# Run tests with coverage report
 pnpm test:coverage
+
+# Run tests in watch mode
+pnpm test:watch
 ```
 
-Tests include:
+**Test Files:**
+- `backend/tests/auth.test.ts` - Authentication endpoint tests
+- `backend/tests/generation.test.ts` - Generation endpoint tests
+
+**Test Coverage:**
 - ✅ Authentication endpoints (signup, login, protected routes)
 - ✅ Generation endpoints (create, list, error simulation)
-- ✅ Input validation
-- ✅ Error handling
+- ✅ Input validation (Zod schemas)
+- ✅ Error handling (custom errors, status codes)
 - ✅ JWT token verification
+- ✅ File upload validation (type, size)
+- ✅ Database operations (Prisma)
+
+**View Coverage Report:**
+```bash
+cd backend
+pnpm test:coverage
+# Open: backend/coverage/lcov-report/index.html in browser
+```
 
 ### Frontend Tests
 
 ```bash
 cd frontend
 
-# Component tests
+# Run all frontend tests
 pnpm test
 
-# Coverage report
+# Run tests in UI mode (interactive)
+pnpm test:ui
+
+# Run tests with coverage
 pnpm test:coverage
+
+# Run tests in watch mode
+pnpm test:watch
 ```
 
-Tests include:
+**Test Files:**
+- `frontend/tests/GenerationForm.test.tsx` - Generation form component tests
+
+**Test Coverage:**
 - ✅ Form rendering and validation
 - ✅ Image upload and preview
 - ✅ Generation flow (loading → success → history update)
 - ✅ Error and retry handling
 - ✅ Abort functionality
+- ✅ User interactions (click, input, file selection)
+
+**View Coverage Report:**
+```bash
+cd frontend
+pnpm test:coverage
+# Open: frontend/coverage/lcov-report/index.html in browser
+```
 
 ### End-to-End Tests
 
+E2E tests use Playwright to test the full user journey across the entire application.
+
+**First Time Setup:**
 ```bash
-# Install Playwright browsers (first time only)
+# Install Playwright browsers (required once)
 pnpm exec playwright install
-
-# Run E2E tests
-pnpm test:e2e
-
-# Run E2E tests with UI
-pnpm test:e2e:ui
 ```
 
-E2E test covers:
-- Full user journey: Signup → Login → Upload → Generate → View History → Restore
+**Run E2E Tests:**
+```bash
+# Run E2E tests (starts both frontend and backend automatically)
+pnpm test:e2e
+
+# Run E2E tests with UI (interactive mode)
+pnpm test:e2e:ui
+
+# Run E2E tests in headed mode (see browser)
+pnpm exec playwright test --headed
+
+# Run specific E2E test
+pnpm exec playwright test tests/e2e.spec.ts
+```
+
+**E2E Test Coverage:**
+- ✅ Full user journey: Signup → Login → Upload → Generate → View History → Restore
+- ✅ Error handling (retry on "Model overloaded" errors)
+- ✅ Form validation
+- ✅ Authentication flow
+- ✅ File upload functionality
+
+**E2E Test File:**
+- `tests/e2e.spec.ts` - Complete user flow tests
+
+**Note:** E2E tests automatically start both frontend and backend servers. Ensure ports 3001 and 5173 are available.
 
 ### Coverage Reports
 
 After running tests, coverage reports are generated in:
-- Backend: `/backend/coverage/lcov-report/index.html`
-- Frontend: `/frontend/coverage/lcov-report/index.html`
+- **Backend**: `backend/coverage/lcov-report/index.html`
+- **Frontend**: `frontend/coverage/lcov-report/index.html`
+
+Open these HTML files in your browser to view detailed coverage reports with line-by-line coverage information.
+
+**Coverage Goals:**
+- Target: > 80% code coverage
+- Critical paths: 100% coverage (auth, generation endpoints)
+- Components: > 70% coverage
+
+### Troubleshooting Tests
+
+**Backend Tests:**
+- If tests fail with "JWT_SECRET not found", ensure `.env` file exists in `backend/` directory
+- If port conflicts occur, ensure no server is running on port 3001
+- If database errors occur, run `pnpm prisma migrate reset` to reset the test database
+
+**Frontend Tests:**
+- If tests fail with module resolution errors, ensure all dependencies are installed: `pnpm install`
+- If Vitest fails to start, check `frontend/vite.config.ts` configuration
+
+**E2E Tests:**
+- If Playwright fails to start browsers, run `pnpm exec playwright install` again
+- If servers fail to start, check that ports 3001 and 5173 are not in use
+- Ensure environment variables are set correctly for both frontend and backend
 
 ---
 
@@ -308,7 +438,19 @@ modelia-assignment/
 
 ## 📖 API Documentation
 
-Full API documentation is available in the [OpenAPI Specification](./OPENAPI.yaml).
+**📘 Full API Documentation:** [OpenAPI 3.0 Specification](./OPENAPI.yaml)
+
+The OpenAPI specification includes:
+- Complete endpoint documentation with request/response schemas
+- Authentication requirements
+- Error response examples
+- Request/response examples
+- Validation rules and constraints
+
+You can view the API documentation using:
+- **Swagger UI**: Import `OPENAPI.yaml` into [Swagger Editor](https://editor.swagger.io/)
+- **Postman**: Import `OPENAPI.yaml` to generate a Postman collection
+- **VS Code**: Use the "OpenAPI (Swagger) Editor" extension
 
 ### Quick Reference
 
