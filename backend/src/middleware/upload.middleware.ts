@@ -1,4 +1,4 @@
-import * as multer from 'multer';
+import multer from 'multer';
 import { type Request, type Response, type NextFunction } from 'express';
 import { CustomError } from './errorHandler.js';
 import { HTTP_STATUS } from '../utils/constants.js';

@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express, { type Express } from 'express';
-import app from '../src/server.js';
+import app from '../src/app.js';
 import prisma from '../src/utils/db.js';
 import { authenticate } from '../src/middleware/auth.middleware.js';
 import { setupRoutes } from '../src/routes/index.js';

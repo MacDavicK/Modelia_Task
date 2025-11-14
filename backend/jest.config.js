@@ -14,6 +14,8 @@ export default {
     ],
   },
   testMatch: ['**/tests/**/*.test.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  maxWorkers: 1, // Run tests serially to avoid database conflicts
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',

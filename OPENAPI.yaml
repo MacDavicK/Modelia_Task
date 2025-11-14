@@ -1,0 +1,147 @@
+openapi: 3.0.0
+info:
+  title: Modelia AI Studio API
+  version: 1.0.0
+  description: API for Mini AI Studio - Fashion Image Generation
+servers:
+  - url: http://localhost:3001/api
+    description: Development server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /auth/signup:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+      responses:
+        '201':
+          description: User created successfully
+        '409':
+          description: Email already exists
+        '400':
+          description: Validation error
+
+  /auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    type: object
+        '401':
+          description: Invalid credentials
+
+  /generations:
+    post:
+      summary: Create a new generation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+                - prompt
+                - style
+              properties:
+                image:
+                  type: string
+                  format: binary
+                prompt:
+                  type: string
+                  minLength: 10
+                  maxLength: 500
+                style:
+                  type: string
+                  enum: [Realistic, Artistic, Minimalist, Vintage]
+      responses:
+        '201':
+          description: Generation created
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '503':
+          description: Model overloaded
+
+    get:
+      summary: Get user generations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+      responses:
+        '200':
+          description: List of generations
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+

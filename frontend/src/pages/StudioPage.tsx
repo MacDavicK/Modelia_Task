@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import { GenerationForm } from '../components/GenerationForm.js';
+import { GenerationHistory } from '../components/GenerationHistory.js';
 import { useGeneration } from '../hooks/useGeneration.js';
-import type { GenerationFormData } from '../types/generation.js';
+import type { GenerationFormData, Generation } from '../types/generation.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -12,6 +13,8 @@ export const StudioPage = (): JSX.Element => {
   const [retryCount, setRetryCount] = useState<number>(0);
   const [lastFormData, setLastFormData] = useState<GenerationFormData | null>(null);
   const [retryTimeout, setRetryTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState<number>(0);
+  const [formInitialData, setFormInitialData] = useState<Partial<GenerationFormData> | undefined>();
 
   const MAX_RETRIES = 3;
 
@@ -59,13 +62,28 @@ export const StudioPage = (): JSX.Element => {
     };
   }, [retryTimeout]);
 
-  // Reset retry count on successful generation
+  // Reset retry count and refresh history on successful generation
   useEffect(() => {
     if (result) {
       setRetryCount(0);
       setLastFormData(null);
+      // Trigger history refresh
+      setHistoryRefreshTrigger((prev) => prev + 1);
     }
   }, [result]);
+
+  const handleRestoreFromHistory = (generation: Generation): void => {
+    // Note: We can't restore the image file from history, only prompt and style
+    // The user will need to upload a new image
+    setFormInitialData({
+      prompt: generation.prompt,
+      style: generation.style,
+    });
+    // Clear initialData after a short delay to allow form to update
+    setTimeout(() => {
+      setFormInitialData(undefined);
+    }, 100);
+  };
 
   const getImageUrl = (imageUrl: string): string => {
     // If imageUrl is already a full URL, return it
@@ -84,11 +102,16 @@ export const StudioPage = (): JSX.Element => {
         <p className="text-gray-600">Welcome, {user?.email || 'User'}! Create amazing styled images.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Left Column: Form */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Create Generation</h2>
-          <GenerationForm onSubmit={handleSubmit} loading={loading} error={error || undefined} />
+          <GenerationForm
+            onSubmit={handleSubmit}
+            loading={loading}
+            error={error || undefined}
+            initialData={formInitialData}
+          />
         </div>
 
         {/* Right Column: Result */}
@@ -197,6 +220,14 @@ export const StudioPage = (): JSX.Element => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Generation History */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <GenerationHistory
+          onRestore={handleRestoreFromHistory}
+          refreshTrigger={historyRefreshTrigger}
+        />
       </div>
     </div>
   );

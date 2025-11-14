@@ -1,25 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2020",
     "module": "ESNext",
-    "lib": ["ES2022"],
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "allowJs": false,
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-    "skipLibCheck": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true
-  },
-  "exclude": ["node_modules", "dist", "build", "coverage", "frontend", "backend"]
+    "resolveJsonModule": true
+  }
 }
-

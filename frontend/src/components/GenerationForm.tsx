@@ -1,4 +1,5 @@
 import { useForm, Controller } from 'react-hook-form';
+import { useEffect } from 'react';
 import { ImageUpload } from './ImageUpload.js';
 import type { GenerationFormData, GenerationStyle } from '../types/generation.js';
 
@@ -6,25 +7,44 @@ interface GenerationFormProps {
   onSubmit: (data: GenerationFormData) => void;
   loading?: boolean;
   error?: string;
+  initialData?: Partial<GenerationFormData>;
 }
 
 const STYLE_OPTIONS: GenerationStyle[] = ['Realistic', 'Artistic', 'Minimalist', 'Vintage'];
 
-export const GenerationForm = ({ onSubmit, loading = false, error }: GenerationFormProps): JSX.Element => {
+export const GenerationForm = ({
+  onSubmit,
+  loading = false,
+  error,
+  initialData,
+}: GenerationFormProps): JSX.Element => {
   const {
     register,
     handleSubmit,
     watch,
     control,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<GenerationFormData>({
     mode: 'onChange',
     defaultValues: {
-      prompt: '',
-      style: 'Realistic',
+      prompt: initialData?.prompt || '',
+      style: initialData?.style || 'Realistic',
     },
   });
+
+  // Update form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      if (initialData.prompt) {
+        setValue('prompt', initialData.prompt, { shouldValidate: true });
+      }
+      if (initialData.style) {
+        setValue('style', initialData.style, { shouldValidate: true });
+      }
+    }
+  }, [initialData, setValue]);
 
   const prompt = watch('prompt');
   const promptLength = prompt?.length || 0;

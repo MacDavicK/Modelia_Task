@@ -1,5 +1,5 @@
 import request from 'supertest';
-import app from '../src/server.js';
+import app from '../src/app.js';
 import prisma from '../src/utils/db.js';
 
 // Test user data
@@ -28,24 +28,35 @@ describe('Generation API', () => {
   let otherUserId: string;
 
   beforeEach(async () => {
-    // Clear database
+    // Clear database - delete generations first (due to foreign key constraint)
     await prisma.generation.deleteMany({});
     await prisma.user.deleteMany({});
 
     // Create test user and get token
     const signupResponse = await request(app)
       .post('/api/auth/signup')
-      .send(testUser);
+      .send(testUser)
+      .expect(201);
+    
+    if (!signupResponse.body.user || !signupResponse.body.token) {
+      throw new Error('Failed to create test user');
+    }
+    
     authToken = signupResponse.body.token;
     userId = signupResponse.body.user.id;
 
     // Create other user
     const otherSignupResponse = await request(app)
       .post('/api/auth/signup')
-      .send(otherUser);
+      .send(otherUser)
+      .expect(201);
+    
+    if (!otherSignupResponse.body.user || !otherSignupResponse.body.token) {
+      throw new Error('Failed to create other test user');
+    }
+    
     otherAuthToken = otherSignupResponse.body.token;
     otherUserId = otherSignupResponse.body.user.id;
-
   });
 
   afterAll(async () => {

@@ -49,7 +49,7 @@ const comparePassword = async (password: string, hash: string): Promise<boolean>
 const generateToken = (userId: string): string => {
   return jwt.sign({ userId }, jwtSecret, {
     expiresIn: JWT_EXPIRES_IN,
-  });
+  } as jwt.SignOptions);
 };
 
 /**
