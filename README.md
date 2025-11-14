@@ -473,9 +473,9 @@ This project is part of the Modelia Full Stack Engineer assignment.
 ## 👤 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-- Email: your.email@example.com
+- GitHub: [@MacDavicK](https://github.com/MacDavicK)
+- LinkedIn: [Kavish Jaiswal](https://www.linkedin.com/in/kavish-jaiswal/)
+- Email: mac.davic18@gmail.com
 
 ---
 
@@ -494,7 +494,7 @@ If you encounter any issues or have questions:
 1. Check the [Known Issues](#-known-issues--todos) section
 2. Review the [API Documentation](#-api-documentation)
 3. Open an issue on GitHub
-4. Contact: your.email@example.com
+4. Contact: mac.davic18@gmail.com
 
 ---
 
