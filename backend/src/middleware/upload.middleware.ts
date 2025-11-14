@@ -64,12 +64,20 @@ export const validateUploadedFile = (
   _res: Response,
   next: NextFunction
 ): void => {
+  // Check for multer errors first (stored by route-level error handler)
+  // If multer error exists, it means the error was already handled and response sent
+  // We should not continue in this case
+  const multerError = (req as any).multerError;
+  if (multerError) {
+    // Multer error was already handled in route-level handler and response was sent
+    // Don't continue the middleware chain
+    return;
+  }
+
   // Check if multer rejected the file (file filter error)
   // When multer's file filter rejects, req.file is undefined
-  // but the error should be caught by the error handler
   if (!req.file) {
-    // Check if there was a multer error that we should handle
-    // This will be caught by the app-level error handler
+    // No file and no multer error means file was not provided
     throw new CustomError('Image file is required', HTTP_STATUS.BAD_REQUEST);
   }
 

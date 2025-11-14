@@ -2,93 +2,127 @@ openapi: 3.0.0
 info:
   title: Modelia AI Studio API
   version: 1.0.0
-  description: API for Mini AI Studio - Fashion Image Generation
+  description: |
+    API for Mini AI Studio - Fashion Image Generation
+    
+    This API allows users to:
+    - Register and authenticate
+    - Upload images and generate styled fashion variations
+    - View their generation history
+    
+    All protected endpoints require JWT authentication via Bearer token.
+
 servers:
   - url: http://localhost:3001/api
     description: Development server
 
 paths:
-  /health:
-    get:
-      summary: Health check endpoint
-      responses:
-        '200':
-          description: Server is healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-                  timestamp:
-                    type: string
-                    format: date-time
-
   /auth/signup:
     post:
       summary: Register a new user
+      description: Creates a new user account with email and password. Password must be at least 8 characters, contain one uppercase letter and one number.
+      tags:
+        - Authentication
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - email
-                - password
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  minLength: 6
+              $ref: '#/components/schemas/SignupRequest'
+            examples:
+              validUser:
+                summary: Valid signup request
+                value:
+                  email: user@example.com
+                  password: SecurePass123
       responses:
         '201':
           description: User created successfully
-        '409':
-          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTY3OC05MGFiLWNkZWYtMTIzNC01Njc4OTBhYmNkZWYiLCJpYXQiOjE2MDAwMDAwMDB9.example
+                user:
+                  id: 12345678-90ab-cdef-1234-567890abcdef
+                  email: user@example.com
+                  createdAt: '2024-01-01T00:00:00.000Z'
         '400':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                error: Validation failed
+                details:
+                  - field: password
+                    message: Password must be at least 8 characters long
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Email already exists
 
   /auth/login:
     post:
       summary: Login user
+      description: Authenticates a user with email and password, returns JWT token and user information.
+      tags:
+        - Authentication
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - email
-                - password
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              validLogin:
+                summary: Valid login request
+                value:
+                  email: user@example.com
+                  password: SecurePass123
       responses:
         '200':
           description: Login successful
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                  user:
-                    type: object
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTY3OC05MGFiLWNkZWYtMTIzNC01Njc4OTBhYmNkZWYiLCJpYXQiOjE2MDAwMDAwMDB9.example
+                user:
+                  id: 12345678-90ab-cdef-1234-567890abcdef
+                  email: user@example.com
+                  createdAt: '2024-01-01T00:00:00.000Z'
         '401':
           description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid email or password
 
   /generations:
     post:
       summary: Create a new generation
+      description: |
+        Uploads an image and generates a styled fashion variation based on the prompt and style.
+        
+        **Requirements:**
+        - Authentication required (Bearer token)
+        - Image file: JPEG or PNG, max 10MB
+        - Prompt: 10-500 characters
+        - Style: One of Realistic, Artistic, Minimalist, Vintage
+        
+        **Note:** The service simulates processing with a 1-2 second delay and has a 20% chance of returning a "Model overloaded" error (503).
+      tags:
+        - Generations
       security:
         - bearerAuth: []
       requestBody:
@@ -105,38 +139,146 @@ paths:
                 image:
                   type: string
                   format: binary
+                  description: Image file (JPEG or PNG, max 10MB)
                 prompt:
                   type: string
                   minLength: 10
                   maxLength: 500
+                  description: Text prompt describing the desired generation (10-500 characters)
+                  example: A stylish fashion outfit with modern accessories
                 style:
                   type: string
                   enum: [Realistic, Artistic, Minimalist, Vintage]
+                  description: Style for the generation
+                  example: Artistic
+            encoding:
+              image:
+                contentType: image/jpeg, image/png
       responses:
         '201':
-          description: Generation created
+          description: Generation created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generation'
+              example:
+                id: 87654321-fedc-ba09-8765-432109876543
+                userId: 12345678-90ab-cdef-1234-567890abcdef
+                prompt: A stylish fashion outfit with modern accessories
+                style: Artistic
+                imageUrl: /uploads/87654321-fedc-ba09-8765-432109876543-1234567890.jpg
+                status: completed
+                createdAt: '2024-01-01T12:00:00.000Z'
         '400':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                invalidFile:
+                  summary: Invalid file type
+                  value:
+                    error: Validation failed
+                    details:
+                      - field: image
+                        message: Invalid file type. Only JPEG and PNG images are allowed.
+                fileTooLarge:
+                  summary: File too large
+                  value:
+                    error: Validation failed
+                    details:
+                      - field: image
+                        message: File size exceeds 10MB limit
+                invalidPrompt:
+                  summary: Invalid prompt length
+                  value:
+                    error: Validation failed
+                    details:
+                      - field: prompt
+                        message: Prompt must be at least 10 characters long
+                missingFile:
+                  summary: Missing file
+                  value:
+                    error: Image file is required
         '401':
-          description: Unauthorized
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Authentication required
         '503':
-          description: Model overloaded
+          description: Service unavailable - Model overloaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Model overloaded
 
     get:
-      summary: Get user generations
+      summary: Get user's generations
+      description: |
+        Retrieves the user's generation history, ordered by creation date (newest first).
+        
+        **Requirements:**
+        - Authentication required (Bearer token)
+        - Optional limit query parameter (1-50, default: 5)
+      tags:
+        - Generations
       security:
         - bearerAuth: []
       parameters:
         - name: limit
           in: query
+          description: Maximum number of generations to return (1-50)
+          required: false
           schema:
             type: integer
+            minimum: 1
+            maximum: 50
             default: 5
+          example: 5
       responses:
         '200':
           description: List of generations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GenerationListItem'
+              example:
+                - id: 87654321-fedc-ba09-8765-432109876543
+                  imageUrl: /uploads/87654321-fedc-ba09-8765-432109876543-1234567890.jpg
+                  prompt: A stylish fashion outfit with modern accessories
+                  style: Artistic
+                  createdAt: '2024-01-01T12:00:00.000Z'
+                  status: completed
+                - id: 11111111-2222-3333-4444-555555555555
+                  imageUrl: /uploads/11111111-2222-3333-4444-555555555555-1234567891.jpg
+                  prompt: Vintage-inspired evening dress
+                  style: Vintage
+                  createdAt: '2024-01-01T11:00:00.000Z'
+                  status: completed
+        '400':
+          description: Invalid limit parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Limit must be between 1 and 50
         '401':
-          description: Unauthorized
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Authentication required
 
 components:
   securitySchemes:
@@ -144,4 +286,173 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: JWT token obtained from /auth/login or /auth/signup
 
+  schemas:
+    SignupRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: user@example.com
+        password:
+          type: string
+          minLength: 8
+          description: Password (min 8 chars, must contain uppercase letter and number)
+          example: SecurePass123
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: user@example.com
+        password:
+          type: string
+          description: User's password
+          example: SecurePass123
+
+    User:
+      type: object
+      description: User object (password is never included in responses)
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+          example: 12345678-90ab-cdef-1234-567890abcdef
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: user@example.com
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: '2024-01-01T00:00:00.000Z'
+
+    AuthResponse:
+      type: object
+      description: Authentication response containing JWT token and user information
+      properties:
+        token:
+          type: string
+          description: JWT authentication token (valid for 7 days)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTY3OC05MGFiLWNkZWYtMTIzNC01Njc4OTBhYmNkZWYiLCJpYXQiOjE2MDAwMDAwMDB9.example
+        user:
+          $ref: '#/components/schemas/User'
+
+    Generation:
+      type: object
+      description: Complete generation object returned after creation
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique generation identifier
+          example: 87654321-fedc-ba09-8765-432109876543
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user who created this generation
+          example: 12345678-90ab-cdef-1234-567890abcdef
+        prompt:
+          type: string
+          description: Text prompt used for generation
+          example: A stylish fashion outfit with modern accessories
+        style:
+          type: string
+          enum: [Realistic, Artistic, Minimalist, Vintage]
+          description: Style applied to the generation
+          example: Artistic
+        imageUrl:
+          type: string
+          description: URL path to the generated image
+          example: /uploads/87654321-fedc-ba09-8765-432109876543-1234567890.jpg
+        status:
+          type: string
+          description: Generation status
+          enum: [pending, completed, failed]
+          default: completed
+          example: completed
+        createdAt:
+          type: string
+          format: date-time
+          description: Generation creation timestamp
+          example: '2024-01-01T12:00:00.000Z'
+
+    GenerationListItem:
+      type: object
+      description: Generation object in list responses (excludes userId)
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique generation identifier
+          example: 87654321-fedc-ba09-8765-432109876543
+        imageUrl:
+          type: string
+          description: URL path to the generated image
+          example: /uploads/87654321-fedc-ba09-8765-432109876543-1234567890.jpg
+        prompt:
+          type: string
+          description: Text prompt used for generation
+          example: A stylish fashion outfit with modern accessories
+        style:
+          type: string
+          enum: [Realistic, Artistic, Minimalist, Vintage]
+          description: Style applied to the generation
+          example: Artistic
+        createdAt:
+          type: string
+          format: date-time
+          description: Generation creation timestamp
+          example: '2024-01-01T12:00:00.000Z'
+        status:
+          type: string
+          description: Generation status
+          enum: [pending, completed, failed]
+          example: completed
+
+    Error:
+      type: object
+      description: Standard error response
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Invalid email or password
+
+    ValidationError:
+      type: object
+      description: Validation error response with field-specific details
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: Validation failed
+        details:
+          type: array
+          description: List of validation errors
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Field name that failed validation
+                example: password
+              message:
+                type: string
+                description: Validation error message
+                example: Password must be at least 8 characters long

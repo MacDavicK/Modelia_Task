@@ -42,6 +42,7 @@ const createTestTextBuffer = (): Buffer => {
   return Buffer.from('This is a text file, not an image');
 };
 
+
 describe('Generation API', () => {
   let authToken: string;
   let userId: string;
@@ -70,6 +71,27 @@ describe('Generation API', () => {
     authToken = signupResponse.body.token;
     userId = signupResponse.body.user.id;
 
+    // Verify user exists in database and token is valid
+    const createdUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    });
+    
+    if (!createdUser) {
+      throw new Error(`User ${userId} was not found in database after signup`);
+    }
+    
+    // Verify token contains correct userId
+    const { verifyToken } = await import('../src/services/auth.service.js');
+    try {
+      const tokenUserId = verifyToken(authToken);
+      if (tokenUserId !== userId) {
+        throw new Error(`Token userId mismatch: expected ${userId}, got ${tokenUserId}`);
+      }
+    } catch (error) {
+      throw new Error(`Token verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
     // Create other user
     const otherSignupResponse = await request(app)
       .post('/api/auth/signup')
@@ -82,6 +104,16 @@ describe('Generation API', () => {
     
     otherAuthToken = otherSignupResponse.body.token;
     otherUserId = otherSignupResponse.body.user.id;
+    
+    // Verify other user exists
+    const otherCreatedUser = await prisma.user.findUnique({
+      where: { id: otherUserId },
+      select: { id: true },
+    });
+    
+    if (!otherCreatedUser) {
+      throw new Error(`Other user ${otherUserId} was not found in database after signup`);
+    }
   });
 
   afterAll(async () => {
