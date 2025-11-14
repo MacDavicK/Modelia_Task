@@ -1,15 +1,37 @@
-function App(): JSX.Element {
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext.js';
+import { Layout } from './components/Layout.js';
+import { ProtectedRoute } from './components/ProtectedRoute.js';
+import { HomePage } from './pages/HomePage.js';
+import { LoginPage } from './pages/LoginPage.js';
+import { SignupPage } from './pages/SignupPage.js';
+import { StudioPage } from './pages/StudioPage.js';
+import { NotFoundPage } from './pages/NotFoundPage.js';
+
+function App() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Welcome to Modelia
-        </h1>
-        <p className="text-gray-600">Full-stack TypeScript monorepo</p>
-      </div>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="login" element={<LoginPage />} />
+            <Route path="signup" element={<SignupPage />} />
+            <Route
+              path="studio"
+              element={
+                <ProtectedRoute>
+                  <StudioPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="404" element={<NotFoundPage />} />
+            <Route path="*" element={<Navigate to="/404" replace />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
 export default App;
-
