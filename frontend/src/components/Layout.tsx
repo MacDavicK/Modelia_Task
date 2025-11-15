@@ -9,7 +9,7 @@ interface LayoutProps {
 }
 
 export const Layout = ({ children }: LayoutProps): JSX.Element => {
-  const { user, isAuthenticated, logout, loading } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = (): void => {

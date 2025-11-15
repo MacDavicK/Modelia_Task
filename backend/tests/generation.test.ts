@@ -8,10 +8,6 @@ const getUniqueUser = (prefix: string) => ({
   password: 'TestPassword123',
 });
 
-// Test user data - generate unique emails for each test run
-const testUser = getUniqueUser('test');
-const otherUser = getUniqueUser('other');
-
 // Helper to create a test image buffer with proper JPEG structure
 const createTestImageBuffer = (): Buffer => {
   // Create a minimal valid JPEG file structure
@@ -36,12 +32,6 @@ const createTestImageBuffer = (): Buffer => {
   const padding = Buffer.alloc(1000, 0xff);
   return Buffer.concat([jpegHeader, padding]);
 };
-
-// Helper to create a test text buffer (for invalid file type tests)
-const createTestTextBuffer = (): Buffer => {
-  return Buffer.from('This is a text file, not an image');
-};
-
 
 describe('Generation API', () => {
   let authToken: string;

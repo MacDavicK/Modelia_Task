@@ -315,7 +315,6 @@ describe('GenerationForm', () => {
     });
 
     it('should allow form to be cleared during loading (simulating abort)', async () => {
-      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       render(<GenerationForm onSubmit={mockOnSubmit} loading={true} />);
 
       // Form should be disabled during loading

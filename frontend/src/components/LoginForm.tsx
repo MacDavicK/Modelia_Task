@@ -232,7 +232,7 @@ export const LoginForm = ({ onSubmit, loading = false, error }: LoginFormProps):
       </button>
 
       <p className="text-center text-sm text-gray-600">
-        Don't have an account?{' '}
+        Don&apos;t have an account?{' '}
         <Link
           to="/signup"
           className="text-primary-600 hover:text-primary-700 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:underline rounded"

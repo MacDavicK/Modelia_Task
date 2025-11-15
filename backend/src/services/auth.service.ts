@@ -144,7 +144,8 @@ export const login = async (
   const token = generateToken(user.id);
 
   // Return user without password
-  const { password: _, ...userWithoutPassword } = user;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { password: _password, ...userWithoutPassword } = user;
 
   return {
     token,
