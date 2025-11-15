@@ -186,7 +186,7 @@ export const GenerationForm = ({
         <button
           type="submit"
           disabled={!isFormValid || loading}
-          aria-label={loading ? 'Generating image, please wait' : 'Generate styled image'}
+          aria-label={loading ? 'Processing generation request' : 'Submit generation request'}
           aria-busy={loading}
           className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
         >
