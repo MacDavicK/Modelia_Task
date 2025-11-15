@@ -28,17 +28,19 @@ const fileFilter = (
     // If mimetype is missing but extension is valid, set a default mimetype
     if (!file.mimetype && hasValidExtension) {
       // Set mimetype based on extension for test files
+      // Type assertion needed because Express.Multer.File doesn't allow direct assignment
+      const fileWithMimeType = file as Express.Multer.File & { mimetype: string };
       if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
-        (file as any).mimetype = 'image/jpeg';
+        fileWithMimeType.mimetype = 'image/jpeg';
       } else if (fileExtension === 'png') {
-        (file as any).mimetype = 'image/png';
+        fileWithMimeType.mimetype = 'image/png';
       }
     }
     cb(null, true);
   } else {
     // Pass error to multer, which will be caught by error handler
-    const error = new Error('Invalid file type. Only JPEG and PNG images are allowed.');
-    (error as any).code = 'INVALID_FILE_TYPE';
+    const error = new Error('Invalid file type. Only JPEG and PNG images are allowed.') as Error & { code?: string };
+    error.code = 'INVALID_FILE_TYPE';
     cb(error);
   }
 };
@@ -61,7 +63,10 @@ export const validateUploadedFile = (
   // Check for multer errors first (stored by route-level error handler)
   // If multer error exists, it means the error was already handled and response sent
   // We should not continue in this case
-  const multerError = (req as any).multerError;
+  interface RequestWithMulterError extends Request {
+    multerError?: Error;
+  }
+  const multerError = (req as RequestWithMulterError).multerError;
   if (multerError) {
     // Multer error was already handled in route-level handler and response was sent
     // Don't continue the middleware chain

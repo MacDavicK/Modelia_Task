@@ -1,4 +1,4 @@
-import express, { type Express, type Request, type Response } from 'express';
+import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -52,7 +52,12 @@ app.get('/health', (_req: Request, res: Response): void => {
 setupRoutes(app);
 
 // Multer error handler (must be before 404 handler)
-app.use((err: any, req: any, res: any, next: any) => {
+app.use((
+  err: Error & { code?: string },
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   // Handle multer errors
   if (err) {
     if (err.code === 'LIMIT_FILE_SIZE') {

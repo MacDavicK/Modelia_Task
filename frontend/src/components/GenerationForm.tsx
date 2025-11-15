@@ -61,6 +61,7 @@ export const GenerationForm = ({
     reset({
       prompt: '',
       style: 'Realistic',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       image: undefined as any,
     });
   };

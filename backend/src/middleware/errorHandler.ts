@@ -30,6 +30,11 @@ export const errorHandler = (
   if (res.headersSent) {
     return next(err);
   }
+  
+  // Use err parameter to avoid unused variable warning
+  if (!err) {
+    return next(new Error('Unknown error'));
+  }
 
   const status = err.status || err.statusCode || 500;
   const message = err.message || 'Internal Server Error';

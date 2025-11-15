@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }: AuthProviderProps): JSX.Element => {
           const userData = JSON.parse(storedUser);
           setToken(storedToken);
           setUser(userData);
-        } catch (error) {
+        } catch {
           // Invalid stored data, clear it
           localStorage.removeItem('token');
           localStorage.removeItem('user');

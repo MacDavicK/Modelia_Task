@@ -5,6 +5,7 @@ import { GenerationForm } from '../src/components/GenerationForm.js';
 
 // Mock the ImageUpload component
 vi.mock('../src/components/ImageUpload.js', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ImageUpload: ({ onFileSelect, error, disabled }: any) => (
     <div data-testid="image-upload">
       <input

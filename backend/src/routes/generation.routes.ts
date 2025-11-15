@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { upload, validateUploadedFile } from '../middleware/upload.middleware.js';
 import { validateGeneration } from '../middleware/validate.js';
@@ -19,7 +19,10 @@ router.post(
     upload.single('image')(req, res, (err) => {
       if (err) {
         // Store multer error on request object for validateUploadedFile to check
-        (req as any).multerError = err;
+        interface RequestWithMulterError extends Request {
+          multerError?: Error;
+        }
+        (req as RequestWithMulterError).multerError = err;
         // Handle specific multer errors
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({

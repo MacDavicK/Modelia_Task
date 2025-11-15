@@ -130,6 +130,7 @@ describe('Generation API', () => {
       const imageBuffer = createTestImageBuffer();
 
       // Retry up to 3 times to handle random 503 errors (20% chance)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let response: any = null;
       let attempts = 0;
       const maxAttempts = 3;
@@ -365,6 +366,7 @@ describe('Generation API', () => {
       expect(response.body.length).toBe(3);
       
       // Verify all generations belong to the user
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       response.body.forEach((generation: any) => {
         expect(generation).toHaveProperty('id');
         expect(generation).toHaveProperty('prompt');
@@ -385,6 +387,7 @@ describe('Generation API', () => {
       expect(response.body.length).toBe(3);
       
       // Verify prompts are from test user
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       response.body.forEach((generation: any) => {
         expect(generation.prompt).toMatch(/^Test prompt/);
       });

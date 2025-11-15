@@ -43,11 +43,11 @@ export const createGenerationController = async (
     });
 
     res.status(HTTP_STATUS.CREATED).json(generation);
-  } catch (error) {
+  } catch (err) {
     // Handle custom errors (like model overloaded)
-    if (error instanceof CustomError) {
-      res.status(error.status).json({
-        error: error.message,
+    if (err instanceof CustomError) {
+      res.status(err.status).json({
+        error: err.message,
       });
       return;
     }
@@ -92,7 +92,7 @@ export const getUserGenerationsController = async (
     const generations = await getUserGenerations(userId, limit);
 
     res.status(HTTP_STATUS.OK).json(generations);
-  } catch (error) {
+  } catch {
     // Handle unexpected errors
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       error: 'Failed to fetch generations',

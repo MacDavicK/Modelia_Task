@@ -97,7 +97,7 @@ export const SignupForm = ({ onSubmit, loading = false, error }: SignupFormProps
 
     try {
       await onSubmit(formData.email, formData.password);
-    } catch (err) {
+    } catch {
       // Error is handled by parent component
     }
   };
