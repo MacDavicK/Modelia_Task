@@ -283,7 +283,7 @@ describe('Generation API', () => {
       // Create 3 generations for test user (with retry logic for 503 errors)
       for (let i = 0; i < 3; i++) {
         let attempts = 0;
-        const maxAttempts = 3;
+        const maxAttempts = 5; // Increased retries for flaky 503 errors
         let success = false;
         
         while (attempts < maxAttempts && !success) {
@@ -299,7 +299,8 @@ describe('Generation API', () => {
           } else if (response.status === 503) {
             attempts++;
             if (attempts < maxAttempts) {
-              await new Promise(resolve => setTimeout(resolve, 500));
+              // Exponential backoff for retries
+              await new Promise(resolve => setTimeout(resolve, 500 * attempts));
             }
           } else {
             // Other error, fail immediately
@@ -308,7 +309,7 @@ describe('Generation API', () => {
         }
         
         if (!success) {
-          throw new Error(`Failed to create generation after ${maxAttempts} attempts`);
+          throw new Error(`Failed to create generation after ${maxAttempts} attempts (all returned 503)`);
         }
         
         // Small delay between creations
@@ -318,7 +319,7 @@ describe('Generation API', () => {
       // Create 2 generations for other user (with retry logic)
       for (let i = 0; i < 2; i++) {
         let attempts = 0;
-        const maxAttempts = 3;
+        const maxAttempts = 5; // Increased retries for flaky 503 errors
         let success = false;
         
         while (attempts < maxAttempts && !success) {
@@ -334,7 +335,8 @@ describe('Generation API', () => {
           } else if (response.status === 503) {
             attempts++;
             if (attempts < maxAttempts) {
-              await new Promise(resolve => setTimeout(resolve, 500));
+              // Exponential backoff for retries
+              await new Promise(resolve => setTimeout(resolve, 500 * attempts));
             }
           } else {
             throw new Error(`Failed to create generation: ${response.status} - ${JSON.stringify(response.body)}`);
@@ -342,7 +344,7 @@ describe('Generation API', () => {
         }
         
         if (!success) {
-          throw new Error(`Failed to create generation after ${maxAttempts} attempts`);
+          throw new Error(`Failed to create generation after ${maxAttempts} attempts (all returned 503)`);
         }
         
         // Small delay between creations

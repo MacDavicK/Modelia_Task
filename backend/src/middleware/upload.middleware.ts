@@ -36,12 +36,6 @@ const fileFilter = (
     }
     cb(null, true);
   } else {
-    // Log for debugging
-    console.log('File filter rejected:', {
-      mimetype: file.mimetype,
-      originalname: file.originalname,
-      extension: fileExtension,
-    });
     // Pass error to multer, which will be caught by error handler
     const error = new Error('Invalid file type. Only JPEG and PNG images are allowed.');
     (error as any).code = 'INVALID_FILE_TYPE';
