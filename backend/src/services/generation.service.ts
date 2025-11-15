@@ -40,19 +40,7 @@ export const createGeneration = async (params: CreateGenerationParams) => {
   });
 
   if (!user) {
-    // Log detailed error for debugging
-    console.error('User lookup failed in generation service:', {
-      userId,
-      timestamp: new Date().toISOString(),
-    });
-    
-    // Also check if any users exist in the database
-    const userCount = await prisma.user.count();
-    console.error('Database state:', {
-      totalUsers: userCount,
-      searchedUserId: userId,
-    });
-    
+    // User doesn't exist - this is a legitimate error
     throw new CustomError(
       `User with ID ${userId} does not exist`,
       HTTP_STATUS.BAD_REQUEST
