@@ -100,7 +100,7 @@ export const GenerationForm = ({
               return true;
             },
           }}
-          render={({ field: { onChange, value }, fieldState: { error } }) => (
+          render={({ field: { onChange }, fieldState: { error } }) => (
             <ImageUpload
               onFileSelect={(file) => onChange(file)}
               error={error?.message}

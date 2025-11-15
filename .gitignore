@@ -42,6 +42,7 @@ Thumbs.db
 
 # Backend specific
 backend/uploads/
+backend/backend/uploads/
 backend/dev.db
 backend/dev.db-journal
 backend/prisma/migrations/
